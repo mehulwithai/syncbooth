@@ -68,18 +68,21 @@ function formatDate(d = new Date()) {
 export async function composeStripImage(rounds, themeKey = 'black') {
   const theme = THEMES[themeKey] || THEMES.black;
 
-  // Slender vertical strip (400px width)
-  const W = 400;
-  const PAD = 16;
-  const COL_GAP = 0;
-  const ROW_GAP = 8;
+  // Scale factor to increase resolution/quality
+  const SCALE = 3;
+
+  // Slender vertical strip (400px width * SCALE)
+  const W = 400 * SCALE;
+  const PAD = 16 * SCALE;
+  const COL_GAP = 0 * SCALE;
+  const ROW_GAP = 8 * SCALE;
   
   // 3:4 Aspect Ratio tiles
-  const TILE_W = (W - PAD * 2 - COL_GAP) / 2; // 184px
-  const TILE_H = 239; // 184 * 1.3
+  const TILE_W = (W - PAD * 2 - COL_GAP) / 2; // 184px * SCALE
+  const TILE_H = 239 * SCALE; // 239px * SCALE
   
   const ROWS = rounds.length;
-  const FOOTER_H = 90;
+  const FOOTER_H = 65 * SCALE;
   const H = PAD * 2 + ROWS * TILE_H + (ROWS - 1) * ROW_GAP + FOOTER_H;
 
   const canvas = document.createElement('canvas');
@@ -106,43 +109,20 @@ export async function composeStripImage(rounds, themeKey = 'black') {
     drawCover(ctx, img2, PAD + TILE_W + COL_GAP, y, TILE_W, TILE_H);
   });
 
-  // Decorative scribble
-  ctx.strokeStyle = theme.scribble;
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  ctx.globalAlpha = 0.8;
-  ctx.beginPath();
-  const cx = W / 2;
-  const topY = PAD + TILE_H * 0.6;
-  const spanY = ROWS * TILE_H * 0.75;
-  ctx.moveTo(cx - 50, topY);
-  ctx.bezierCurveTo(cx - 90, topY + spanY * 0.15, cx - 75, topY + spanY * 0.35, cx - 15, topY + spanY * 0.3);
-  ctx.bezierCurveTo(cx + 35, topY + spanY * 0.25, cx + 55, topY + spanY * 0.05, cx + 5, topY - spanY * 0.05);
-  ctx.bezierCurveTo(cx - 30, topY - spanY * 0.15, cx - 50, topY + spanY * 0.15, cx - 5, topY + spanY * 0.2);
-  ctx.bezierCurveTo(cx + 45, topY + spanY * 0.3, cx + 70, topY + spanY * 0.55, cx + 20, topY + spanY * 0.65);
-  ctx.bezierCurveTo(cx - 15, topY + spanY * 0.75, cx - 50, topY + spanY * 0.6, cx - 25, topY + spanY * 0.5);
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
   // Footer section
   const footerY = PAD * 2 + ROWS * TILE_H + (ROWS - 1) * ROW_GAP;
   
   // Horizontal accent bar (sharp corners)
   ctx.fillStyle = theme.accent;
-  ctx.fillRect(W / 2 - 40, footerY + 12, 80, 6);
+  ctx.fillRect(W / 2 - 40 * SCALE, footerY + 16 * SCALE, 80 * SCALE, 6 * SCALE);
 
-  // Date
-  ctx.fillStyle = theme.text;
-  ctx.font = '700 22px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText(formatDate(), W / 2, footerY + 44);
-
-  // Wordmark
+  // Wordmark (date removed)
   ctx.fillStyle = theme.subtext;
-  ctx.font = '600 11px monospace';
+  ctx.font = `600 ${11 * SCALE}px monospace`;
+  ctx.textAlign = 'center';
   ctx.save();
-  ctx.letterSpacing = '3px';
-  ctx.fillText('SYNCBOOTH.COM', W / 2, footerY + 66);
+  ctx.letterSpacing = `${3 * SCALE}px`;
+  ctx.fillText('SYNCBOOTH.COM', W / 2, footerY + 45 * SCALE);
   ctx.restore();
 
   return canvas.toDataURL('image/png');

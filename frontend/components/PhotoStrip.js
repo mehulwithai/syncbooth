@@ -133,11 +133,8 @@ export default function PhotoStrip({ rounds }) {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col items-center mt-4 gap-1">
+        <div className="flex flex-col items-center mt-4 gap-3">
           <div className={`w-16 h-1.5 rounded-none ${theme.accentBg}`} />
-          <p className={`font-mono text-base font-bold mt-2 tracking-wide ${theme.text}`}>
-            {formatDate()}
-          </p>
           <p className={`font-mono text-[9px] font-semibold tracking-[0.25em] ${theme.subtext}`}>
             SYNCBOOTH.COM
           </p>
