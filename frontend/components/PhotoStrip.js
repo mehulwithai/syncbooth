@@ -2,13 +2,6 @@
 import { useEffect, useState } from 'react';
 import { composeStripImage } from '../lib/composeStrip';
 
-function formatDate(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}.${m}.${day}`;
-}
-
 const THEMES = {
   black: {
     bg: 'bg-[#141018]',
@@ -60,10 +53,12 @@ const THEMES = {
   }
 };
 
-export default function PhotoStrip({ rounds }) {
+export default function PhotoStrip({ rounds, onRequestRetake }) {
   const [activeTheme, setActiveTheme] = useState('black');
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [composing, setComposing] = useState(true);
+
+  const theme = THEMES[activeTheme];
 
   useEffect(() => {
     let cancelled = false;
@@ -79,10 +74,8 @@ export default function PhotoStrip({ rounds }) {
     };
   }, [rounds, activeTheme]);
 
-  const theme = THEMES[activeTheme];
-
   return (
-    <div className="flex flex-col items-center gap-6 animate-fadeInUp w-full max-w-sm">
+    <div className="flex flex-col items-center gap-6 animate-fadeInUp w-full max-w-sm pb-10">
       <p className="text-white/70 text-xs tracking-[0.3em] uppercase">All done ♡</p>
 
       {/* Theme Selector */}
@@ -135,22 +128,43 @@ export default function PhotoStrip({ rounds }) {
         {/* Footer */}
         <div className="flex flex-col items-center mt-4 gap-3">
           <div className={`w-16 h-1.5 rounded-none ${theme.accentBg}`} />
-          <p className={`font-mono text-[9px] font-semibold tracking-[0.25em] ${theme.subtext}`}>
+          <p className={`font-mono text-[9px] font-semibold tracking-[0.25em] text-center ${theme.text}`}>
             SYNCBOOTH.COM
           </p>
         </div>
       </div>
 
-      <a
-        href={downloadUrl || '#'}
-        download={`syncbooth-strip-${activeTheme}.png`}
-        aria-disabled={composing}
-        className={`bg-pink-500 hover:bg-pink-400 active:scale-95 transition-all duration-200 rounded-full px-8 py-3 font-semibold shadow-lg shadow-pink-500/20 text-white ${
-          composing ? 'opacity-50 pointer-events-none' : ''
-        }`}
-      >
-        {composing ? 'Preparing download...' : 'Download strip'}
-      </a>
+      {/* Action Buttons */}
+      <div className="flex flex-col gap-3 w-full">
+        <a
+          href={downloadUrl || '#'}
+          download={`syncbooth-strip-${activeTheme}.png`}
+          aria-disabled={composing}
+          className={`w-full bg-pink-500 hover:bg-pink-400 active:scale-95 transition-all duration-200 rounded-xl py-3 font-semibold text-center shadow-lg shadow-pink-500/20 text-white ${
+            composing ? 'opacity-50 pointer-events-none' : ''
+          }`}
+        >
+          {composing ? 'Preparing download...' : 'Download strip'}
+        </a>
+
+        {/* Re-take Shot Section */}
+        <div className="flex flex-col items-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-4 w-full">
+          <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">
+            Re-take a Shot
+          </span>
+          <div className="grid grid-cols-2 gap-2 w-full mt-1">
+            {[1, 2, 3, 4].map((num) => (
+              <button
+                key={num}
+                onClick={() => onRequestRetake?.(num)}
+                className="bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 hover:border-pink-500/50 rounded-xl py-2.5 text-xs font-semibold text-white/80 transition-all duration-200"
+              >
+                🔄 Shot {num}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

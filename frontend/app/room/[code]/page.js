@@ -6,7 +6,7 @@ import { estimateServerOffset, msUntilTarget } from '../../../lib/timeSync';
 import CameraView from '../../../components/CameraView';
 import PhotoStrip from '../../../components/PhotoStrip';
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 const TOTAL_ROUNDS = 4;
 
 export default function RoomPage() {
@@ -18,6 +18,11 @@ export default function RoomPage() {
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   const iceCandidatesQueueRef = useRef([]);
+
+  // Timer references for robust sync
+  const countdownIntervalRef = useRef(null);
+  const countdownTimeoutRef = useRef(null);
+  const flashTimeoutRef = useRef(null);
 
   const [hasJoined, setHasJoined] = useState(false);
   const [nameInput, setNameInput] = useState('');
@@ -38,6 +43,9 @@ export default function RoomPage() {
 
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+
+  // Voting state for re-taking shots
+  const [retakeRequest, setRetakeRequest] = useState(null); // { round, requesterSlot }
 
   // Load saved name and gender on mount
   useEffect(() => {
@@ -86,6 +94,10 @@ export default function RoomPage() {
     socket.on('partner-ready', () => setPartnerReady(true));
 
     socket.on('countdown-start', async ({ targetTime, round: r }) => {
+      // Clear out photostrip and filter out previous captures for this round if retaking
+      setStrip(null);
+      setRoundsDone((prev) => prev.filter((item) => item.round !== r));
+
       roundRef.current = r;
       setRound(r);
       setPartnerReady(false);
@@ -157,6 +169,18 @@ export default function RoomPage() {
       }
     });
 
+    // Re-take voting listeners
+    socket.on('retake-requested', ({ round: r, requesterSlot }) => {
+      setRetakeRequest({ round: r, requesterSlot });
+    });
+
+    socket.on('retake-declined', ({ round: r }) => {
+      setStatus(`Your partner declined the re-take request for Shot ${r}.`);
+      setTimeout(() => {
+        setStatus('Your strip is ready! 🎉');
+      }, 3000);
+    });
+
     // Emit join-room
     socket.emit('join-room', { code, name: nameInput.trim(), gender: genderInput });
 
@@ -171,16 +195,21 @@ export default function RoomPage() {
       socket.off('webrtc-offer');
       socket.off('webrtc-answer');
       socket.off('webrtc-candidate');
+      socket.off('retake-requested');
+      socket.off('retake-declined');
     };
   }, [hasJoined, code]);
 
-  // Clean up local camera stream and WebRTC connection on unmount
+  // Clean up local camera stream, WebRTC connection, and timers on unmount
   useEffect(() => {
     return () => {
       cleanupWebRTC();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => track.stop());
       }
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
     };
   }, []);
 
@@ -275,24 +304,32 @@ export default function RoomPage() {
   }
 
   function runCountdown(waitMs) {
+    // Clear any active intervals/timeouts to prevent multiple flashes
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+
     const totalSeconds = Math.ceil(waitMs / 1000);
     setCountdown(totalSeconds);
 
-    const interval = setInterval(() => {
+    countdownIntervalRef.current = setInterval(() => {
       setCountdown((c) => {
         if (typeof c !== 'number' || c <= 1) {
-          clearInterval(interval);
+          clearInterval(countdownIntervalRef.current);
           return 0;
         }
         return c - 1;
       });
     }, 1000);
 
-    setTimeout(async () => {
-      clearInterval(interval);
+    countdownTimeoutRef.current = setTimeout(async () => {
+      clearInterval(countdownIntervalRef.current);
       setCountdown('📸');
       setFlash(true);
-      setTimeout(() => setFlash(false), 400);
+      
+      flashTimeoutRef.current = setTimeout(() => {
+        setFlash(false);
+      }, 400);
 
       const image = cameraRef.current?.capture();
       if (image && slotRef.current) {
@@ -304,13 +341,29 @@ export default function RoomPage() {
       } else {
         console.error('Capture skipped: missing image or slot', { image: !!image, slot: slotRef.current });
       }
-      setTimeout(() => setCountdown(null), 700);
+      
+      countdownTimeoutRef.current = setTimeout(() => {
+        setCountdown(null);
+      }, 700);
     }, waitMs);
   }
 
   function hitReady() {
     setIAmReady(true);
     getSocket().emit('ready', { code });
+  }
+
+  // Vote voting handlers
+  function handleRequestRetake(retakeRound) {
+    setStatus(`Sent re-take request for Shot ${retakeRound} to your partner...`);
+    getSocket().emit('request-retake', { code, round: retakeRound });
+  }
+
+  function handleRetakeResponse(agree) {
+    if (retakeRequest) {
+      getSocket().emit('retake-response', { code, round: retakeRequest.round, agree });
+      setRetakeRequest(null);
+    }
   }
 
   // Pre-join Form Screen
@@ -400,7 +453,7 @@ export default function RoomPage() {
       </div>
 
       {strip ? (
-        <PhotoStrip rounds={strip.rounds} />
+        <PhotoStrip rounds={strip.rounds} onRequestRetake={handleRequestRetake} />
       ) : (
         <>
           {/* Cameras Grid */}
@@ -502,6 +555,38 @@ export default function RoomPage() {
             <p className="text-pink-300 animate-pulse">Your partner is ready! 💗</p>
           )}
         </>
+      )}
+
+      {/* Re-take Request Modal Dialog Overlay */}
+      {retakeRequest && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-[#141018] border border-white/10 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col gap-6 animate-pop">
+            <div>
+              <p className="text-pink-400 text-xs font-semibold tracking-wider uppercase mb-1">Re-take Request 🔄</p>
+              <h2 className="text-xl font-bold text-white">
+                {retakeRequest.requesterSlot === 1 ? maleName : femaleName} wants to re-take Shot {retakeRequest.round}
+              </h2>
+              <p className="text-white/60 text-sm mt-2">
+                Do you agree to re-shoot this round? This will delete the previous capture.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleRetakeResponse(true)}
+                className="w-full bg-pink-500 hover:bg-pink-400 active:scale-95 transition-all duration-200 rounded-xl py-3 font-bold text-white shadow-lg shadow-pink-500/20"
+              >
+                Agree (Let's re-shoot!)
+              </button>
+              <button
+                onClick={() => handleRetakeResponse(false)}
+                className="w-full bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 rounded-xl py-2.5 font-bold text-white/80 transition-all duration-200"
+              >
+                Decline
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

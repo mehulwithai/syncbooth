@@ -1,10 +1,14 @@
-import { io } from 'socket.io-client';
-
 let socket;
 
 export function getSocket() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_BACKEND_URL, { transports: ['websocket'] });
+    const { io } = require('socket.io-client');
+    socket = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000', {
+      transports: ['websocket']
+    });
   }
   return socket;
 }

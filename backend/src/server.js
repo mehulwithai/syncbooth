@@ -141,6 +141,7 @@ io.on('connection', (socket) => {
     }
     socket.join(code);
     socket.data.roomCode = code;
+    socket.data.slot = result.slot;
     socket.emit('joined', { slot: result.slot });
     
     const room = getRoom(code);
@@ -181,6 +182,34 @@ io.on('connection', (socket) => {
 
   socket.on('webrtc-candidate', ({ code, candidate }) => {
     socket.to(code).emit('webrtc-candidate', { candidate });
+  });
+
+  // Re-take voting system
+  socket.on('request-retake', ({ code, round }) => {
+    socket.to(code).emit('retake-requested', { round, requesterSlot: socket.data.slot || 1 });
+  });
+
+  socket.on('retake-response', async ({ code, round, agree }) => {
+    if (agree) {
+      const room = getRoom(code);
+      if (!room) return;
+
+      const { data: dbRoom } = await supabase
+        .from('rooms').select('id').eq('code', code).single();
+      
+      if (dbRoom) {
+        // Delete captures for this round
+        await supabase.from('captures').delete().eq('room_id', dbRoom.id).eq('round', round);
+        // Delete compiled strip
+        await supabase.from('strips').delete().eq('room_id', dbRoom.id);
+      }
+
+      setRound(code, round);
+      const targetTime = Date.now() + COUNTDOWN_MS;
+      io.to(code).emit('countdown-start', { targetTime, round, totalRounds: TOTAL_ROUNDS });
+    } else {
+      socket.to(code).emit('retake-declined', { round });
+    }
   });
 });
 
