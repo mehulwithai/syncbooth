@@ -369,7 +369,7 @@ export default function RoomPage() {
   // Pre-join Form Screen
   if (!hasJoined) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-[#0f0a1a]">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 bg-[#0f0a1a]">
         <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-black/50 animate-fadeInUp flex flex-col gap-6">
           <div className="text-center">
             <p className="text-white/40 text-xs tracking-[0.2em] uppercase mb-1">Room Code: {code}</p>
@@ -445,7 +445,7 @@ export default function RoomPage() {
   const femaleName = femaleUser ? femaleUser.name : 'Waiting for Female...';
 
   return (
-    <main className="min-h-screen flex flex-col items-center px-4 py-8 gap-6 bg-[#0f0a1a]">
+    <main className="flex-1 flex flex-col items-center px-4 py-8 gap-6 bg-[#0f0a1a]">
       <div className="text-center animate-fadeIn">
         <p className="text-white/40 text-sm tracking-widest">ROOM CODE</p>
         <h1 className="text-3xl font-bold tracking-widest text-pink-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.15)]">{code}</h1>

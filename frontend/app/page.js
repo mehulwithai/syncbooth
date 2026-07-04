@@ -23,7 +23,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 gap-8">
+    <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 gap-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-2">SyncBooth 💗</h1>
         <p className="text-white/60">On Someone's Demand...</p>
