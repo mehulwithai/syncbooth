@@ -233,7 +233,10 @@ export default function RoomPage() {
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
       ]
     });
 
@@ -244,10 +247,25 @@ export default function RoomPage() {
       });
     }
 
-    // Handle remote track
+    // Handle remote track robustly
     pc.ontrack = (event) => {
-      console.log('Received remote track', event.streams[0]);
-      setRemoteStream(event.streams[0]);
+      console.log('Received remote track:', event.track.kind);
+      const [remoteStream] = event.streams;
+      if (remoteStream) {
+        setRemoteStream(remoteStream);
+      } else {
+        // Fallback for browsers that don't pass streams in ontrack
+        setRemoteStream((prev) => {
+          if (prev) {
+            if (!prev.getTracks().find((t) => t.id === event.track.id)) {
+              prev.addTrack(event.track);
+            }
+            return prev;
+          } else {
+            return new MediaStream([event.track]);
+          }
+        });
+      }
     };
 
     // Handle ICE candidates

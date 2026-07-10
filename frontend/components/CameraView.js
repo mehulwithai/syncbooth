@@ -6,8 +6,14 @@ const CameraView = forwardRef(function CameraView({ stream, mirrored = false, pl
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream || null;
+    const video = videoRef.current;
+    if (video) {
+      video.srcObject = stream || null;
+      if (stream) {
+        video.play().catch((err) => {
+          console.warn("Autoplay was prevented or failed:", err);
+        });
+      }
     }
   }, [stream]);
 
@@ -40,7 +46,7 @@ const CameraView = forwardRef(function CameraView({ stream, mirrored = false, pl
           ref={videoRef}
           autoPlay
           playsInline
-          muted={mirrored} // Mute local preview (though audio is not requested)
+          muted={true} // Always mute video-only stream to bypass strict iOS Safari autoplay policies
           className={`w-full h-full object-cover ${mirrored ? 'scale-x-[-1]' : ''}`}
         />
       ) : (
