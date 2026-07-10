@@ -8,7 +8,7 @@ export default function Footer() {
           <span>&copy; Dadits Media 2026</span>
         </div>
         <div className="text-center sm:text-right select-none">
-          Created by <span className="text-pink-400/80 font-semibold hover:text-pink-400 transition-colors duration-300">Mehul</span> for <span className="text-purple-400/80 font-semibold hover:text-purple-400 transition-colors duration-300">Someone</span>...🫶
+          Created By <span className="text-pink-400/80 font-semibold hover:text-pink-400 transition-colors duration-300">Mehul</span>
         </div>
       </div>
     </footer>

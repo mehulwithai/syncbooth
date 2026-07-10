@@ -58,6 +58,37 @@ export default function Home() {
           Join
         </button>
       </div>
+
+      {/* Instructions Card */}
+      <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-6 mt-4 flex flex-col gap-4 text-sm text-white/70">
+        <h2 className="text-white font-semibold text-center tracking-wide text-base">How to Use SyncBooth 📸</h2>
+        <ul className="flex flex-col gap-3">
+          <li className="flex gap-3 items-start">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-xs mt-0.5">1</span>
+            <div>
+              <strong className="text-white font-medium">Create or Join a Room:</strong> Click "Start a session" or enter an existing 6-character room code.
+            </div>
+          </li>
+          <li className="flex gap-3 items-start">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-xs mt-0.5">2</span>
+            <div>
+              <strong className="text-white font-medium">Share with a Friend:</strong> Copy the page link or room code and send it to your partner.
+            </div>
+          </li>
+          <li className="flex gap-3 items-start">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-xs mt-0.5">3</span>
+            <div>
+              <strong className="text-white font-medium">Enter Details & Grant Access:</strong> Choose your name, select your gender, and allow camera access.
+            </div>
+          </li>
+          <li className="flex gap-3 items-start">
+            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-xs mt-0.5">4</span>
+            <div>
+              <strong className="text-white font-medium">Ready & Shoot:</strong> Once both click "Ready", a synced countdown captures 4 photos for your photostrip!
+            </div>
+          </li>
+        </ul>
+      </div>
     </main>
   );
 }
